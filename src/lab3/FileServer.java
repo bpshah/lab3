@@ -327,6 +327,7 @@ public class FileServer extends Thread implements ActionListener {
 				writer.append(System.getProperty( "line.separator" ));
 				writer.flush();
 				writer.close();
+				updateLog();
 			}
 			else { 
 				result = 1; // Setting error code 1 suggesting there was some error in creating the directory
@@ -355,6 +356,7 @@ public class FileServer extends Thread implements ActionListener {
 			writer.append(System.getProperty( "line.separator" ));
 			writer.flush();
 			writer.close();
+			updateLog();
 
 		}
 		else
@@ -385,6 +387,7 @@ public class FileServer extends Thread implements ActionListener {
 				writer.append(System.getProperty( "line.separator" ));
 				writer.flush();
 				writer.close();
+				updateLog();
 			}
 			else
 				result = 1; // Setting error code to 1 suggesting directory does not exist 
@@ -467,6 +470,57 @@ public class FileServer extends Thread implements ActionListener {
 			e1.printStackTrace();
 		}
 		logs.remove(undoS);
+//		for(int i = 0; i< logs.size();i++) {
+//			try {
+//				FileWriter fw = new FileWriter("E:\\Lab1Folders\\logs.txt",true);
+//				fw.append(logs.get(i));
+//				fw.append(System.getProperty( "line.separator" ));
+//				fw.flush();
+//				fw.close();
+//			} catch (IOException e1) {
+//				// TODO Auto-generated catch block
+//				e1.printStackTrace();
+//			}
+//		}
+		
+		String cmd = undoS.substring(0,undoS.indexOf(" "));
+		if(cmd.equals("CreateDir")) {
+			String path = undoS.substring(undoS.lastIndexOf(" ") + 1,undoS.length());
+			File dir = new File(path);
+			try {
+				org.apache.commons.io.FileUtils.deleteDirectory(dir);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			//function to remove dependent log
+			undoOpsSeq(path);
+		}
+		else if(cmd.equals("DeleteDir")) {
+			String path = undoS.substring(undoS.lastIndexOf(" ") + 1,undoS.length());
+			File dir = new File(path);
+			dir.mkdir();
+			undoOpsSeq(path);
+		}
+		else if(cmd.equals("RenameMoveDir")) {
+			String[] temp = undoS.split(" ");
+			File src = new File(temp[5]);
+			File dest = new File(temp[3]);
+			src.renameTo(dest);
+			undoOpsSeq(temp[3]);
+		}
+	}
+	
+	public void undoOpsSeq(String parent) {
+		String n = parent + "\\";
+		System.out.println("N: " + n);
+		for(int i = 0;i<logs.size();i++) {
+			if(logs.get(i).contains(n) || logs.get(i).contains(parent)) {
+				logs.remove(i);
+				logModel.remove(i);
+			}
+		}
+		
 		for(int i = 0; i< logs.size();i++) {
 			try {
 				FileWriter fw = new FileWriter("E:\\Lab1Folders\\logs.txt",true);
@@ -479,29 +533,23 @@ public class FileServer extends Thread implements ActionListener {
 				e1.printStackTrace();
 			}
 		}
-		
-		String cmd = undoS.substring(0,undoS.indexOf(" "));
-		if(cmd.equals("CreateDir")) {
-			String path = undoS.substring(undoS.lastIndexOf(" ") + 1,undoS.length());
-			File dir = new File(path);
-			try {
-				org.apache.commons.io.FileUtils.deleteDirectory(dir);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+
+	}
+	
+	public void updateLog() {
+		logs.clear();
+		logModel.clear();
+	    try {
+			logs = Files.readAllLines(Paths.get("E:\\Lab1Folders\\logs.txt"));
+			for(int i = 0; i< logs.size();i++) {
+				logModel.addElement(logs.get(i));
 			}
+	    } catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		else if(cmd.equals("DeleteDir")) {
-			String path = undoS.substring(undoS.lastIndexOf(" ") + 1,undoS.length());
-			File dir = new File(path);
-			dir.mkdir();
-		}
-		else if(cmd.equals("RenameMoveDir")) {
-			String[] temp = undoS.split(" ");
-			File src = new File(temp[5]);
-			File dest = new File(temp[3]);
-			src.renameTo(dest);
-		}
+
+		
 	}
 	
 
